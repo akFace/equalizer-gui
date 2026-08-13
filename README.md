@@ -1,4 +1,4 @@
-# Equalizer-gui For MPV Player
+# Equalizer-GUI for mpv player
 
 - Interactive 10-band audio equalizer GUI script for mpv media player with auto-save and persistence.
 - 一款为 mpv 播放器打造的 10 段图形化音频均衡器（Equalizer GUI） Lua 脚本。具有屏幕分辨率大小自适应、现代设计风格、图形可视化调节、配置持久化自动保存与加载等特性。
@@ -33,8 +33,8 @@
 
 ### 鼠标操作
 
-- **按住左键拖拽推子**：上下调整对应频段的增益（带鼠标锁定，拖拽过程中超出面板范围也不会脱手）。
-- **鼠标滚轮**：悬停在某个频段或选中频段时，滚动滚轮可按 0.5dB 步进微调。
+- **点击调节**：上下调整对应频段的增益
+- **鼠标滚轮调节**：悬停在某个频段或选中频段时，滚动滚轮可按 0.5dB 步进微调。
 - **右键单击推子**：将该单个频段快速重置为 0 dB。
 
 ### 键盘操作
