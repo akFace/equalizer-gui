@@ -3,7 +3,7 @@
 - Interactive 10-band audio equalizer GUI script for mpv media player with auto-save and persistence.
 - 一款为 mpv 播放器打造的 10 段图形化音频均衡器（Equalizer GUI） Lua 脚本。具有屏幕分辨率大小自适应、现代设计风格、图形可视化调节、配置持久化自动保存与加载等特性。
 
-![image](https://github.com/akFace/equalizer-gui/raw/main/images/Snipaste_2026-07-16_17-37-57.jpg)
+![image](https://github.com/akFace/equalizer-gui/raw/main/images/Snipaste_2026-08-13_18-08-43.jpg)
 
 ## 📦 安装方法
 
