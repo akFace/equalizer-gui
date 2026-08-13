@@ -1,10 +1,13 @@
 -- [[
---  名称: mpv-equalizer-gui (全功能持久化自动保存)
---  特性: 1080p-4K自适应、uosc风格拖拽锁、圆角UI、配置自动保存与启动自动加载
+--  名称: mpv-equalizer-gui (全功能持久化自动保存版 - 含极简开关)
+--  特性: 1080p-4K自适应、uosc风格推子、胶囊开关、配置自动保存与启动自动加载
 -- ]]
 
 local mp = require("mp")
 local utils = require("mp.utils")
+
+-- EQ 总开关状态 (默认开启)
+local eq_enabled = true
 
 -- 10 段 EQ 配置 (对应 FFmpeg equalizer 滤镜频率)
 local bands = {
@@ -40,11 +43,12 @@ local ui = {
 
 local mouse = { x = 0, y = 0, vx = 0, vy = 0, down = false }
 
--- 按钮组件配置
+-- 按钮组件配置 (添加 toggle 开关)
 local btns = {
-    reset = { label = "重置 (Reset)", x = 0, y = 0, w = 100, h = 36, radius = 18 },
-    save  = { label = "保存（Save）", x = 0, y = 0, w = 100, h = 36, radius = 18 },
-    close = { label = "✕",           x = 0, y = 0, w = 28,  h = 28, radius = 14 }
+    reset  = { label = "重置 (Reset)", x = 0, y = 0, w = 120, h = 36, radius = 18 },
+    save   = { label = "保存（Save）", x = 0, y = 0, w = 120, h = 36, radius = 18 },
+    close  = { label = "✕",           x = 0, y = 0, w = 32,  h = 32, radius = 16 },
+    toggle = { label = "",            x = 0, y = 0, w = 44,  h = 22, radius = 11 }
 }
 
 -- ASS 颜色定义
@@ -64,6 +68,11 @@ local colors = {
 
 -- 应用音频 EQ 滤镜到 mpv 引擎
 local function apply_audio_eq()
+    if not eq_enabled then
+        mp.commandv("af", "remove", "@eq_gui")
+        return
+    end
+
     local filters = {}
     for _, b in ipairs(bands) do
         table.insert(filters, string.format("equalizer=f=%s:width_type=o:w=1:g=%.1f", b.freq, b.val))
@@ -72,14 +81,19 @@ local function apply_audio_eq()
     mp.commandv("af", "set", filter_str)
 end
 
--- 将增益数据写入本地 JSON 配置文件
+-- 将增益数据与开关状态写入本地 JSON 配置文件
 local function save_config()
-    local values = {}
+    local band_vals = {}
     for i, b in ipairs(bands) do
-        values[i] = b.val
+        band_vals[i] = b.val
     end
 
-    local json_str, _ = utils.format_json(values)
+    local data = {
+        enabled = eq_enabled,
+        bands = band_vals
+    }
+
+    local json_str, _ = utils.format_json(data)
     if json_str then
         local file = io.open(CONFIG_PATH, "w")
         -- 若 script-opts 文件夹不存在，回退写入配置根目录
@@ -113,11 +127,23 @@ local function load_config()
 
     if not content or content == "" then return end
 
-    local values, _ = utils.parse_json(content)
-    if values and type(values) == "table" then
-        for i, val in ipairs(values) do
-            if bands[i] and type(val) == "number" then
-                bands[i].val = val
+    local data, _ = utils.parse_json(content)
+    if data and type(data) == "table" then
+        if data.bands and type(data.bands) == "table" then
+            for i, val in ipairs(data.bands) do
+                if bands[i] and type(val) == "number" then
+                    bands[i].val = val
+                end
+            end
+            if type(data.enabled) == "boolean" then
+                eq_enabled = data.enabled
+            end
+        else
+            -- 兼容旧版纯数组格式
+            for i, val in ipairs(data) do
+                if bands[i] and type(val) == "number" then
+                    bands[i].val = val
+                end
             end
         end
         apply_audio_eq()
@@ -186,13 +212,16 @@ local function render()
     btns.reset.x = btns.save.x - 135
     btns.reset.y = py + PANEL_H - 52
 
-    btns.close.x = px + PANEL_W - 40
-    btns.close.y = py + 10
+    btns.close.x = px + PANEL_W - 44
+    btns.close.y = py + 12
+
+    btns.toggle.x = btns.close.x - 56
+    btns.toggle.y = py + 17
 
     local ass = ""
 
     -- 1. 弹窗背景底板 (14px 圆角)
-    local panel_path = draw_round_rect(px, py, PANEL_W, PANEL_H, 4)
+    local panel_path = draw_round_rect(px, py, PANEL_W, PANEL_H, 14)
     ass = ass .. string.format("{\\pos(0,0)\\an7\\p1\\1c%s\\1a&H0F&\\3c&H555555&\\bord2}%s{\\p0}\n", colors.bg, panel_path)
 
     -- 2. 标题
@@ -205,10 +234,30 @@ local function render()
     if close_hover then
         ass = ass .. string.format("{\\pos(0,0)\\an7\\p1\\1c%s\\bord0}%s{\\p0}\n", colors.close_hover, close_path)
     end
-    ass = ass .. string.format("{\\pos(%d,%d)\\an5\\fs14\\1c%s\\b1}%s{\\b0}\n",
+    ass = ass .. string.format("{\\pos(%d,%d)\\an5\\fs20\\1c%s\\b1}%s{\\b0}\n",
         btns.close.x + btns.close.w / 2, btns.close.y + btns.close.h / 2, close_hover and colors.text_hi or colors.text, btns.close.label)
 
-    -- 4. 刻度参考线
+    -- 4. 极简胶囊开关 (无文字 uosc/iOS 风格)
+    local toggle_hover = (mouse.vx >= btns.toggle.x and mouse.vx <= btns.toggle.x + btns.toggle.w and mouse.vy >= btns.toggle.y and mouse.vy <= btns.toggle.y + btns.toggle.h)
+    
+    local pill_color, knob_color
+    if eq_enabled then
+        pill_color = toggle_hover and colors.hover or colors.active
+        knob_color = colors.text_hi
+    else
+        pill_color = toggle_hover and "&H555555&" or "&H333333&"
+        knob_color = toggle_hover and "&HABABAB&" or "&H888888&"
+    end
+
+    local toggle_path = draw_round_rect(btns.toggle.x, btns.toggle.y, btns.toggle.w, btns.toggle.h, btns.toggle.radius)
+    ass = ass .. string.format("{\\pos(0,0)\\an7\\p1\\1c%s\\bord0}%s{\\p0}\n", pill_color, toggle_path)
+
+    local knob_x = eq_enabled and (btns.toggle.x + btns.toggle.w - 11) or (btns.toggle.x + 11)
+    local knob_y = btns.toggle.y + btns.toggle.h / 2
+    local knob_path = draw_circle(knob_x, knob_y, 8)
+    ass = ass .. string.format("{\\pos(0,0)\\an7\\p1\\1c%s\\bord0}%s{\\p0}\n", knob_color, knob_path)
+
+    -- 5. 刻度参考线
     local line_y_15 = py + 75
     local line_y_m15 = py + PANEL_H - 95
     local line_y_0 = line_y_15 + (line_y_m15 - line_y_15) / 2
@@ -221,7 +270,7 @@ local function render()
     ass = ass .. string.format("{\\pos(%d,%d)\\an6\\fs12\\1c%s\\b1}+15dB{\\b0}\n", px + 40, line_y_15, colors.text_hi)
     ass = ass .. string.format("{\\pos(%d,%d)\\an6\\fs12\\1c%s\\b1}-15dB{\\b0}\n", px + 40, line_y_m15, colors.text_hi)
 
-    -- 5. 10 段推子渲染
+    -- 6. 10 段推子渲染 (关闭时呈现暗灰色，开启时亮起)
     local gap = (PANEL_W - 90) / #bands
     local start_x = px + 45 + gap / 2
 
@@ -231,7 +280,13 @@ local function render()
         local sy = line_y_0 - (val_clamped / 15) * ((line_y_m15 - line_y_15) / 2)
 
         local is_active = (i == ui.dragging_band or i == ui.hover_band or i == ui.selected_band)
-        local act_color = is_active and colors.hover or colors.active
+        
+        local act_color
+        if not eq_enabled then
+            act_color = "&H666666&"
+        else
+            act_color = is_active and colors.hover or colors.active
+        end
 
         -- 轨道底色
         ass = ass .. string.format("{\\pos(0,0)\\an7\\p1\\1c%s\\1a&H00&}m %d %d l %d %d l %d %d l %d %d{\\p0}\n",
@@ -252,7 +307,7 @@ local function render()
         ass = ass .. string.format("{\\pos(%d,%d)\\an8\\fs13\\1c%s\\b1}%s{\\b0}\n", sx, line_y_m15 + 12, is_active and colors.text_hi or colors.text, b.label)
     end
 
-    -- 6. 底部大圆角（胶囊）按钮绘制
+    -- 7. 底部胶囊按钮绘制
     local reset_hover = (mouse.vx >= btns.reset.x and mouse.vx <= btns.reset.x + btns.reset.w and mouse.vy >= btns.reset.y and mouse.vy <= btns.reset.y + btns.reset.h)
     local save_hover = (mouse.vx >= btns.save.x and mouse.vx <= btns.save.x + btns.save.w and mouse.vy >= btns.save.y and mouse.vy <= btns.save.y + btns.save.h)
 
@@ -313,6 +368,15 @@ local function on_mouse_down()
     if mouse.vx >= btns.close.x and mouse.vx <= btns.close.x + btns.close.w and
        mouse.vy >= btns.close.y and mouse.vy <= btns.close.y + btns.close.h then
         toggle_ui()
+        return
+    end
+
+    -- 点击胶囊开关按钮
+    if mouse.vx >= btns.toggle.x and mouse.vx <= btns.toggle.x + btns.toggle.w and
+       mouse.vy >= btns.toggle.y and mouse.vy <= btns.toggle.y + btns.toggle.h then
+        eq_enabled = not eq_enabled
+        apply_audio_eq()
+        render()
         return
     end
 
