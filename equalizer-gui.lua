@@ -45,8 +45,8 @@ local mouse = { x = 0, y = 0, vx = 0, vy = 0, down = false }
 
 -- 按钮组件配置 (添加 toggle 开关)
 local btns = {
-    reset  = { label = "重置 (Reset)", x = 0, y = 0, w = 120, h = 36, radius = 18 },
-    save   = { label = "保存（Save）", x = 0, y = 0, w = 120, h = 36, radius = 18 },
+    reset  = { label = "重置 (Reset)", x = 0, y = 0, w = 110, h = 36, radius = 18 },
+    save   = { label = "保存（Save）", x = 0, y = 0, w = 110, h = 36, radius = 18 },
     close  = { label = "✕",           x = 0, y = 0, w = 32,  h = 32, radius = 16 },
     toggle = { label = "",            x = 0, y = 0, w = 44,  h = 22, radius = 11 }
 }
