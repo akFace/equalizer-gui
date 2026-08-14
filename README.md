@@ -13,7 +13,9 @@
 - **Windows (安装版)**: `%APPDATA%/mpv/scripts/equalizer-gui.lua`
 - **Linux / macOS**: `~/.config/mpv/scripts/equalizer-gui.lua`
 
-2. 重启 mpv 播放器即可生效。
+2. 设置快捷键（下文提到）
+
+3. 重启 mpv 播放器即可生效。
 
 > 💡 **提示**：脚本会在 `script-opts/` 或 mpv 配置根目录下自动创建 `equalizer-gui.json` 用于持久化保存你的均衡器配置。
 
@@ -21,11 +23,17 @@
 
 ## ⌨️ 快捷键说明
 
-| 快捷键 | 功能描述                                  |
-| ------ | ----------------------------------------- |
-| E      | 打开 / 关闭均衡器面板                     |
-| R      | （面板打开状态下）重置所有频段增益为 0 dB |
-| Enter  | （面板打开状态下）保存当前配置并关闭面板  |
+打开配置文件夹中的 `input.conf`，写入快捷键
+
+```
+e  script-message toggle-equalizer-gui  # 打开 / 关闭均衡器面板
+ESC  script-message close-equalizer-gui # 可选-关闭均衡器面板
+```
+
+| 固定快捷键 | 功能描述                                  |
+| ---------- | ----------------------------------------- |
+| R          | （面板打开状态下）重置所有频段增益为 0 dB |
+| Enter      | （面板打开状态下）保存当前配置并关闭面板  |
 
 ---
 
