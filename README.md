@@ -2,6 +2,7 @@
 
 - Interactive 10-band audio equalizer GUI script for mpv media player with auto-save and persistence.
 - 一款为 mpv 播放器打造的 10 段图形化音频均衡器（Equalizer GUI） Lua 脚本。具有屏幕分辨率大小自适应、现代设计风格、图形可视化调节、配置持久化自动保存与加载等特性。
+- 支持在不影响当前设置的 eq 情况下切换声道功能
 
 ![image](https://github.com/akFace/equalizer-gui/raw/main/images/Snipaste_2026-08-13_18-08-43.jpg)
 
@@ -28,6 +29,12 @@
 ```
 e  script-message toggle-equalizer-gui  # 打开 / 关闭均衡器面板
 ESC  script-message close-equalizer-gui # 可选-关闭均衡器面板
+
+# 可设置声道快捷键或配合右键菜单插件使用（可选）
+_  script-message audio-channel-auto     #menu: 音频 > 声道 > 自动
+_  script-message audio-channel-stereo   #menu: 音频 > 声道 > 立体声
+_  script-message audio-channel-left     #menu: 音频 > 声道 > 左声道
+_  script-message audio-channel-right    #menu: 音频 > 声道 > 右声道
 ```
 
 | 固定快捷键 | 功能描述                                  |
